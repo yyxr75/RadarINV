@@ -347,4 +347,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python scripts/radial_sampling.py --ckpt logs/2024-06-25T23-08-41_vqvae_32x48x8_radial/checkpoints/last.ckpt --config logs/2024-06-25T23-08-41_vqvae_32x48x8_radial/configs/2024-06-27T21-39-30-project.yaml --outdir outputs/autoencoder/ --visualFlag autoencoder
+# python scripts/unconditioning_ldm_radial_sampling.py --ckpt logs/2024-06-25T23-08-41_vqvae_32x48x8_radial/checkpoints/last.ckpt --config logs/2024-06-25T23-08-41_vqvae_32x48x8_radial/configs/2024-06-27T21-39-30-project.yaml --outdir outputs/autoencoder/ --visualFlag autoencoder

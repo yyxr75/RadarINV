@@ -1,4 +1,4 @@
-name: RadarINV
+name: radarINV
 channels:
   - pytorch
   - defaults
@@ -123,4 +123,4 @@ dependencies:
     - werkzeug==3.0.1
     - yarl==1.9.4
     - zipp==3.17.0
-prefix: /home/kwonsm/.conda/envs/RadarINV
+prefix: /home/kwonsm/.conda/envs/radarINV

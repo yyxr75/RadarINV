@@ -1,7 +1,6 @@
 from ldm_inverse.condition_methods import get_conditioning_method
 from ldm_inverse.radarHD import get_constraint_method
 from ldm.models.diffusion.ddim import DDIMSampler
-from data.dataloader import get_dataset, get_dataloader
 from scripts.utils import clear_color, mask_generator
 import matplotlib.pyplot as plt
 from ldm_inverse.measurements import get_noise, get_operator
@@ -48,7 +47,6 @@ parser.add_argument('--ddim_eta', default=0.1, type=float)
 parser.add_argument('--n_samples_per_class', default=1, type=int)
 parser.add_argument('--ddim_scale', default=1.0, type=float)
 
-# scan parameters
 parser.add_argument('--test_filenumber', default=1, type=int)
 parser.add_argument('--step_size_dynamic', default=0.001, type=float)
 parser.add_argument('--step_size_static', default=None, type=float)
@@ -108,10 +106,10 @@ sample_fn = partial(sampler.posterior_sampler, measurement_cond_fn=measurement_c
                                         # noise_dropout=0.1,
                                         **vars(args))
 
-# Prepare dataloader
-data_config = task_config['data']
-dataset = get_dataset(**data_config)
-loader = get_dataloader(dataset, batch_size=args.n_samples_per_class, num_workers=0, train=False)
+data_root = task_config['root']
+input_files_list = []
+for file in os.listdir(data_root):
+    input_files_list.append(file)
 
 # Exception) In case of inpainting, we need to generate a mask 
 if measure_config['operator']['name'] == 'inpainting':
@@ -131,16 +129,12 @@ import random
 # Set a seed for reproducibility
 random.seed(55)
 
-for i, data_dict in enumerate(loader):
+for file in enumerate(input_files_list):
 
-    lidar = data_dict['lidar_ra'].to(device)
-    radar = data_dict['radar_ra'].to(device)
-    fname = data_dict['data_fname'].item()
+    radar = torch.from_numpy(np.fromfile(file)).to(device)
+    fname = file.split('.')[0] # str
 
     folder_of_params = create_folder(args, fname, index=i)
-    ref_img = lidar
-    # save points
-    save_points_radial(ref_img, fname, folder_of_params, is_lidar=True)
 
     print('***************************go with {}   ***************************'.format(fname))
     y_n = radar
@@ -165,6 +159,6 @@ for i, data_dict in enumerate(loader):
     plt.imshow(output_img.mean(dim=1).detach().cpu().numpy().squeeze(), cmap='gray')
     plt.axis('off')
     plt.savefig(os.path.join(folder_of_params, 'recon', str(fname)+'_recon.png'), bbox_inches='tight', pad_inches=0, dpi=600)
-    # break
+    plt.close()
 
 # python sample_condition_radial.py --test_filenumber 5 --step_size_dynamic 0.001  --measurement_scale 1.0 --measurement_step_number 20 --unet_lr 0.001 --unet_iters 10 --resample_sigma 80 --save_process --gpu 0
