@@ -1,4 +1,4 @@
-# RadarINV: Unsupervised Radar Point Cloud Enhancement via LiDAR Guided Diffusion Priors (Submited to NIPS 2025)
+# RadarINV: Unsupervised Radar Point Cloud Enhancement via LiDAR Guided Diffusion Priors (Submitted to NIPS 2025)
 
 
 ![image](https://github.com/user-attachments/assets/970a529d-9845-43d9-ad94-8769b64e87ee)
