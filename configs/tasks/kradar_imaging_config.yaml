@@ -1,0 +1,23 @@
+conditioning:
+  main_sampler: resample
+  method: ps # Do not touch
+  params:
+    scale: 0.5
+
+data:
+  name: kradar
+  root: "/scratch/project/cpautodriving/yanlongyang/kradar/data/valset.txt"
+
+measurement:
+  operator:
+    name: radar_imaging
+    num_antennas: 84
+    # use kradar prior
+    # shape: [256, 128]
+    # use radial prior
+    shape: [512, 768]
+    # intensity: 3.0
+  
+  noise: 
+    name: gaussian
+    sigma: 0.01

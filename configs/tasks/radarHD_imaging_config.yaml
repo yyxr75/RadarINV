@@ -1,0 +1,29 @@
+conditioning:
+  main_sampler: resample
+  method: ps # Do not touch
+  params:
+    scale: 0.5
+
+data:
+  name: DatasetRadarHD
+  root: "/scratch/project/cpautodriving/yanlongyang/RadarHD/dataset_5/"
+  sub: "train"
+  RBINS: 256
+  ABINS_RADAR: 64
+  ABINS_LIDAR: 512
+  RBINS_ORIG: 256
+  ABINS_RADAR_ORIG: 64
+  ABINS_LIDAR_ORIG: 512
+  M: 0
+
+measurement:
+  operator:
+    name: radar_imaging
+    num_antennas: 12
+    # use radial prior
+    shape: [512, 768]
+    # intensity: 3.0
+  
+  noise: 
+    name: gaussian
+    sigma: 0.01
