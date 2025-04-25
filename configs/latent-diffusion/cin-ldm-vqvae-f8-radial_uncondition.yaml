@@ -9,9 +9,8 @@ model:
     timesteps: 1000
     first_stage_key: lidar_ra
     cond_stage_key: radar_ra
-    # image_size: [16,24] # 生成时候的latent feature shape
-    image_size: [32,48] # 生成时候的latent feature shape
-    channels: 4 # 生成时候的latent feature channel
+    image_size: [32,48] 
+    channels: 4 
     first_stage_trainable: false
     cond_stage_trainable: false
     diffusion_trainable: true
@@ -20,15 +19,11 @@ model:
     unet_config:
       target: ldm.modules.diffusionmodules.openaimodel.UNetModel
       params:
-        image_size: 32 # 没什么用但是要写
-        in_channels: 4 # concat 3 (latent lidar_ra) + 64 (latent radar_ra)
-        out_channels: 4 # 要跟auto的embed_dim一样
+        image_size: 32 
+        in_channels: 4 
+        out_channels: 4 
         model_channels: 512
         attention_resolutions:
-        #note: this isn\t actually the resolution but
-        # the downsampling factor, i.e. this corresnponds to
-        # attention on spatial resolution 8,16,32, as the
-        # spatial reolution of the latents is 32 for f8
         - 4
         - 2
         - 1
@@ -38,15 +33,11 @@ model:
         - 2
         - 4
         num_head_channels: 32
-        # use_spatial_transformer: true
-        # transformer_depth: 1
-        # context_dim: 3 # 这个必须是conditioning的z_channels*double_z一样
     
     first_stage_config:
       target: taming.models.vqgan.VQModel
       params:
-        # ckpt_path: "/scratch/user/yanlongyang/Project1_Diffusion_related/Object_Detection_with_Super_Resolution_Radar_Point_Cloud_Creation_using_Deep_Learning/resample/models/first_stage_models/radial_ae_epoch=000323.ckpt"
-        ckpt_path: "/scratch/project/cpautodriving/yanlongyang/Project1_Diffusion_related/Object_Detection_with_Super_Resolution_Radar_Point_Cloud_Creation_using_Deep_Learning/resample/models/first_stage_models/radial_ae_epoch=000323.ckpt"
+        ckpt_path: "models/radial_ae_epoch=000323.ckpt"
         monitor: "val/rec_loss"
         embed_dim: 4
         n_embed: 2048

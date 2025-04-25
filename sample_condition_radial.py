@@ -109,7 +109,8 @@ sample_fn = partial(sampler.posterior_sampler, measurement_cond_fn=measurement_c
 data_root = task_config['root']
 input_files_list = []
 for file in os.listdir(data_root):
-    input_files_list.append(file)
+    fname = os.path.join(data_root, file)
+    input_files_list.append(fname)
 
 # Exception) In case of inpainting, we need to generate a mask 
 if measure_config['operator']['name'] == 'inpainting':
@@ -131,8 +132,9 @@ random.seed(55)
 
 for file in enumerate(input_files_list):
 
-    radar = torch.from_numpy(np.fromfile(file)).to(device)
-    fname = file.split('.')[0] # str
+    data = np.fromfile(file).reshape(task_config['DatasetRADIal']['RBINS'], task_config['DatasetRADIal']['ABINS'])
+    radar = torch.from_numpy(data).to(device)
+    fname = file.split('/')[-1].split('.')[0] # str
 
     folder_of_params = create_folder(args, fname, index=i)
 
