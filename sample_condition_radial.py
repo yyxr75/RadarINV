@@ -1,5 +1,4 @@
 from ldm_inverse.condition_methods import get_conditioning_method
-from ldm_inverse.radarHD import get_constraint_method
 from ldm.models.diffusion.ddim import DDIMSampler
 from scripts.utils import clear_color, mask_generator
 import matplotlib.pyplot as plt
@@ -37,7 +36,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--model_config', type=str)
 
 parser.add_argument('--ldm_config', default="configs/latent-diffusion/cin-ldm-vqvae-f8-radial_uncondition.yaml", type=str)
-parser.add_argument('--diffusion_ckpt', default="models/ldm/radial_ldm_countryside_scene_epoch=000131.ckpt", type=str)
+parser.add_argument('--diffusion_ckpt', default="models/epoch=000323.ckpt", type=str)
 parser.add_argument('--task_config', default="configs/tasks/radial_imaging_config.yaml", type=str)
 
 parser.add_argument('--gpu', type=int, default=0)
@@ -117,8 +116,6 @@ if measure_config['operator']['name'] == 'inpainting':
     mask_gen = mask_generator(**measure_config['mask_opt'])
 
 
-from ldm_inverse.visualize import visualizer
-Visualizer = visualizer()
 from util.rpl import RadarSignalProcessing
 RSP = RadarSignalProcessing('CalibrationTable.npy',method='RA',device='cpu') #,lib='PyTorch')
 # ------------------------------------------------------------
@@ -140,6 +137,7 @@ for file in enumerate(input_files_list):
 
     print('***************************go with {}   ***************************'.format(fname))
     y_n = radar
+    ref_img = np.fromfile()
 
     # input
     input_img = ref_img.mean(dim=1).detach().cpu().numpy().squeeze()

@@ -33,7 +33,7 @@ wget https://drive.google.com/file/d/1otQjrseEkKl0OgRYx4j5-iI81QZTpnlR/view?usp=
 ## Set envrionment
 
 ```
-conda env create environment.yaml
+conda env create -f environment.yaml
 ```
 
 ## Inference

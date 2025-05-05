@@ -21,3 +21,5 @@
 *.out
 results*/
 __pycache__/
+models/
+src/
