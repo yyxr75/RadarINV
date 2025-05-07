@@ -17,7 +17,7 @@ from util.save_points import save_points_radial
 
 def get_model(args):
     config = OmegaConf.load(args.ldm_config)
-    model = load_model_from_config(config, args.diffusion_ckpt)
+    model = load_model_from_config(config, args.diffusion_ckpt, args.gpu, train=False)
 
     return model
 
@@ -68,7 +68,7 @@ args = parser.parse_args()
 # Load configurations
 task_config = load_yaml(args.task_config)
 # Device setting
-device_str = f"cuda:0" if torch.cuda.is_available() else 'cpu'
+device_str = f"cuda:1" if torch.cuda.is_available() else 'cpu'
 print(f"Device set to {device_str}.")
 device = torch.device(device_str)  
 
@@ -104,12 +104,12 @@ sample_fn = partial(sampler.posterior_sampler, measurement_cond_fn=measurement_c
                                         eta=args.ddim_eta,
                                         # noise_dropout=0.1,
                                         **vars(args))
-
-data_root = task_config['root']
+data_root = task_config['data']['root']
 input_files_list = []
 for file in os.listdir(data_root):
     fname = os.path.join(data_root, file)
-    input_files_list.append(fname)
+    if file.split('_')[0] == 'radar':
+        input_files_list.append(fname)
 
 # Exception) In case of inpainting, we need to generate a mask 
 if measure_config['operator']['name'] == 'inpainting':
@@ -127,28 +127,26 @@ import random
 # Set a seed for reproducibility
 random.seed(55)
 
-for file in enumerate(input_files_list):
-
-    data = np.fromfile(file).reshape(task_config['DatasetRADIal']['RBINS'], task_config['DatasetRADIal']['ABINS'])
-    radar = torch.from_numpy(data).to(device)
+for idx, file in enumerate(input_files_list):
+    try:
+        data = np.fromfile(file).reshape(task_config['data']['RBINS'], task_config['data']['ABINS'])
+    except:
+        import pdb;pdb.set_trace()
+        pass
+    radar = torch.from_numpy(data).squeeze().unsqueeze(0).unsqueeze(0).to(device) # (1, 1, 512, 768)
     fname = file.split('/')[-1].split('.')[0] # str
 
-    folder_of_params = create_folder(args, fname, index=i)
+    folder_of_params = create_folder(args, fname, index=idx)
 
     print('***************************go with {}   ***************************'.format(fname))
     y_n = radar
-    ref_img = np.fromfile()
+    ref_img = torch.randn(radar.shape).to(device) # useless
 
-    # input
-    input_img = ref_img.mean(dim=1).detach().cpu().numpy().squeeze()
-    plt.imshow(input_img, cmap='gray')
+    # label
+    input_img = y_n.mean(dim=1).detach().cpu().numpy().squeeze()
+    plt.imshow(input_img)
     plt.axis('off')
     plt.savefig(os.path.join(folder_of_params, 'input', str(fname)+'_input.png'), bbox_inches='tight', pad_inches=0, dpi=600)
-    # label
-    label_img = y_n.mean(dim=1).detach().cpu().numpy().squeeze()
-    plt.imshow(label_img, cmap='gray')
-    plt.axis('off')
-    plt.savefig(os.path.join(folder_of_params, 'label', str(fname)+'_label.png'), bbox_inches='tight', pad_inches=0, dpi=600)
     # inference
     samples_ddim, _ = sample_fn(original=ref_img, measurement=y_n, fname=fname, test_var=None, folder_of_params=folder_of_params) #, constraint_fn=None, conditioning=cond)
     x_samples_ddim = model.decode_first_stage(samples_ddim.detach())
@@ -156,9 +154,9 @@ for file in enumerate(input_files_list):
     save_points_radial(x_samples_ddim, fname, folder_of_params, is_lidar=False)
     # recon
     output_img = x_samples_ddim
-    plt.imshow(output_img.mean(dim=1).detach().cpu().numpy().squeeze(), cmap='gray')
+    plt.imshow(output_img.mean(dim=1).detach().cpu().numpy().squeeze())
     plt.axis('off')
     plt.savefig(os.path.join(folder_of_params, 'recon', str(fname)+'_recon.png'), bbox_inches='tight', pad_inches=0, dpi=600)
     plt.close()
 
-# python sample_condition_radial.py --test_filenumber 5 --step_size_dynamic 0.001  --measurement_scale 1.0 --measurement_step_number 20 --unet_lr 0.001 --unet_iters 10 --resample_sigma 80 --save_process --gpu 0
+# python sample_condition_radial.py --test_filenumber 5 --step_size_dynamic 0.001  --measurement_scale 1.0 --measurement_step_number 20 --unet_lr 0.001 --unet_iters 10 --resample_sigma 80 --save_process --gpu 1

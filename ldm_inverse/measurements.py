@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 import yaml
 import torch
+import numpy as np
 
 # =================
 # Operation classes
