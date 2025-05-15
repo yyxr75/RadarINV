@@ -158,7 +158,7 @@ class RadarImagingOperator(LinearOperator):
     def __init__(self, num_antennas, device, shape):
         self.device = device
         self.num_antennas = num_antennas
-        H,W = shape[0], shape[1] # coloradar 中的数据大小
+        H,W = shape[0], shape[1]
         self.y_coords, self.x_coords = torch.meshgrid(torch.arange(H, device=self.device), torch.arange(W, device=self.device))
         # Initialize any other necessary components here
         self.num_antennas = num_antennas
@@ -166,7 +166,7 @@ class RadarImagingOperator(LinearOperator):
         self.d = self.wavelength / 2
 
     def cond_fn(self, img, ref_img=None, threshold=0.01, sharpness=1000):
-        mask = torch.sigmoid(sharpness * (img.mean(dim=1, keepdim=True) - threshold)) #这是一个近似，可能导致效果不行
+        mask = torch.sigmoid(sharpness * (img.mean(dim=1, keepdim=True) - threshold))
         N,C,H,W = img.shape
         x_coords = self.x_coords
         azimuth_grid = x_coords*150/W-75 # radial angle setting
