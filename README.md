@@ -1,4 +1,4 @@
-# RadarINV: Unsupervised Radar Point Cloud Enhancement via LiDAR Guided Diffusion Priors (Submitted to NIPS 2025)
+# Unsupervised Radar Point Cloud Enhancement via Arbitrary LiDAR Guided Diffusion Prior
 
 
 ![image](https://github.com/user-attachments/assets/970a529d-9845-43d9-ad94-8769b64e87ee)
@@ -47,7 +47,7 @@ python sample_condition_radial.py --step_size_dynamic 0.001  --measurement_scale
 If you find our work interesting, please consider citing
 ```
 @inproceedings{
-title={RadarINV: Unsupervised Radar Point Cloud Enhancement via LiDAR Guided Diffusion Priors},
+title={Unsupervised Radar Point Cloud Enhancement via Arbitrary LiDAR Guided Diffusion Prior},
 year={2025},
 }
 ```
