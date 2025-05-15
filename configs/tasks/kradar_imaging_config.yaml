@@ -1,0 +1,19 @@
+conditioning:
+  main_sampler: resample
+  method: ps # Do not touch
+  params:
+    scale: 0.5
+
+data:
+  name: kradar
+  root: "demo"
+
+measurement:
+  operator:
+    name: radar_imaging
+    num_antennas: 84
+    shape: [512, 768]
+  
+  noise: 
+    name: gaussian
+    sigma: 0.01
