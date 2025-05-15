@@ -1,24 +1,18 @@
-# RadarINV: Unsupervised Radar Point Cloud Enhancement via LiDAR Guided Diffusion Priors (Submitted to NIPS 2025)
+# Unsupervised Radar Point Cloud Enhancement via Arbitrary LiDAR Guided Diffusion Prior
 
 
 ![image](https://github.com/user-attachments/assets/970a529d-9845-43d9-ad94-8769b64e87ee)
 
 
 ## Abstract
-In industrial automation, radar is a critical sensor in machine perception. 
-However, its angular resolution is inherently limited by the Rayleigh criterion, which depends on both the radar’s operating wavelength and the effective aperture of its antenna array.
-Recent methods have leveraged paired LiDAR–radar data for training to achieve notable point enhancement, but this requirement substantially increases model development cost and complexity, limiting scalability and widespread adoption.
-To overcome this, we introduce RadarINV, an unsupervised radar points generation enhancement algorithm that employs a LiDAR-guided diffusion model as a prior without the need for paired training data. 
-Specifically, our approach reformulates radar angle estimation recovery as an inverse problem and incorporates prior knowledge through a diffusion model with LiDAR domain knowledge during the solution process.
-Experimental results demonstrate that our method attains high fidelity and low noise performance compared to traditional regularization techniques, and, relative to paired training methods, it not only achieves comparable performance but also offers generalization capability.
-To our knowledge, this is the first approach that enhances radar points output by integrating prior knowledge via a diffusion model rather than relying on paired training data.
+In industrial automation, radar is a critical sensor in machine perception. However, the angular resolution of radar is inherently limited by the Rayleigh criterion, which depends on both the radar’s operating wavelength and the effective aperture of its antenna array. To overcome these hardware-imposed limitations, recent neural network-based methods have leveraged high-resolution LiDAR data, paired with radar measurements, during training to enhance radar point cloud resolution. While effective, these approaches require extensive paired datasets, which are costly to acquire and prone to calibration error. These challenges motivate the need for methods that can improve radar resolution without relying on paired high-resolution ground-truth data. Here, we introduce an unsupervised radar points enhancement algorithm that employs an arbitrary LiDAR-guided diffusion model as a prior without the need for paired training data. Specifically, our approach formulates radar angle estimation recovery as an inverse problem and incorporates prior knowledge through a diffusion model with arbitrary LiDAR domain knowledge. Experimental results demonstrate that our method attains high fidelity and low noise performance compared to traditional regularization techniques. Additionally, compared to paired training methods, it not only achieves comparable performance but also offers improved generalization capability. To our knowledge, this is the first approach that enhances radar points output by integrating prior knowledge via a diffusion model rather than relying on paired training data.
 
 ## Install 
 
 ```
-git clone https://github.com/yyxr75/RadarINV-Unsupervised-Radar-Point-Cloud-Enhancement-via-LiDAR-Guided-Diffusion-Priors.git
+git clone https://github.com/yyxr75/RadarINV.git
 
-cd RadarINV-Unsupervised-Radar-Point-Cloud-Enhancement-via-LiDAR-Guided-Diffusion-Priors
+cd RadarINV
 
 ```
 
@@ -47,7 +41,7 @@ python sample_condition_radial.py --step_size_dynamic 0.001  --measurement_scale
 If you find our work interesting, please consider citing
 ```
 @inproceedings{
-title={RadarINV: Unsupervised Radar Point Cloud Enhancement via LiDAR Guided Diffusion Priors},
+title={Unsupervised Radar Point Cloud Enhancement via Arbitrary LiDAR Guided Diffusion Prior},
 year={2025},
 }
 ```
