@@ -36,17 +36,3 @@ conda env create -f environment.yaml
 python sample_condition_radial.py --step_size_dynamic 0.001  --measurement_scale 1.0 --measurement_step_number 20 --unet_lr 0.001 --unet_iters 10 --resample_sigma 80 --save_process --gpu 0
 ```
 
-## Citation
-
-If you find our work interesting, please consider citing
-```
-@misc{yang2025unsupervisedradarpointcloud,
-      title={Unsupervised Radar Point Cloud Enhancement via Arbitrary LiDAR Guided Diffusion Prior}, 
-      author={Yanlong Yang and Jianan Liu and Guanxiong Luo and Hao Li and Euijoon Ahn and Mostafa Rahimi Azghadi and Tao Huang},
-      year={2025},
-      eprint={2505.09887},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2505.09887}, 
-}
-```
