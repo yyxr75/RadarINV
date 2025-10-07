@@ -105,7 +105,7 @@ def otsu_threshold(image, bins=256):
 def save_points_radial(sample, fname, folder_path, is_lidar=False):
     
     # radar coordinate
-    AoA_mat = np.load('/scratch/project/cpautodriving/yanlongyang/Project1_Diffusion_related/Object_Detection_with_Super_Resolution_Radar_Point_Cloud_Creation_using_Deep_Learning/resample/CalibrationTable.npy',allow_pickle=True).item()
+    AoA_mat = np.load('CalibrationTable.npy',allow_pickle=True).item()
     azimuth_coord = AoA_mat['Azimuth_table']
     # 如果两个维度差很多，那么要把小的插成大的
     if len(azimuth_coord)- sample.shape[-1] > 100:

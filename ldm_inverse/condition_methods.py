@@ -39,29 +39,20 @@ class ConditioningMethod(ABC):
     def project(self, data, noisy_measurement, **kwargs):
         return self.operator.project(data=data, measurement=noisy_measurement, **kwargs)
     
-    # x_prev = ref_img = lidar，测试，为了加噪声让成像更准
-    # measurement = radar，测试，为了加噪声让成像更准
     def grad_and_value(self, x_prev, x_0_hat, measurement, folder_of_params=None, **kwargs):
         if not measurement.requires_grad:
             measurement.requires_grad = True
-            measurement = measurement.cuda()
+            measurement = measurement.to(x_prev.device)
         if self.noiser.__name__ == 'gaussian':
             index = kwargs.get('index', None)
             save_process = kwargs.get('save_process', True)
             # -------pixel space or latent space-------
             X_decode = self.model.differentiable_decode_first_stage(x_0_hat) # 
-            # X_decode = x_prev # 在pixel space测试L2优化能不能收敛
-            # -----------------------------------------
-            # Threshold = measurement.mean()+0.01  # 试试用unet的结果当输出
             Threshold = 0.01
 
             Ax = self.operator.forward(X_decode, threshold=Threshold, **kwargs) # 
             difference = measurement - Ax
-            import pdb;pdb.set_trace()
-
-            # norm = torch.linalg.norm(difference)
             norm = torch.sum(difference*difference) # L2 norm
-            # norm = torch.sum(torch.sqrt(difference**2 + 1e-8))  # Smooth L1 norm
             norm_grad = torch.autograd.grad(outputs=norm, inputs=x_prev, retain_graph=True)[0]
             # --------visialize------- 
             # OUT_SUBFOLDER_FNAME = kwargs.get('OUT_SUBFOLDER_FNAME', None)

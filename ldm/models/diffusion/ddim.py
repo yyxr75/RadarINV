@@ -33,10 +33,21 @@ class DDIMSampler(object):
         self.ddpm_num_timesteps = model.num_timesteps
         self.schedule = schedule
 
+    # def register_buffer(self, name, attr):
+    #     if type(attr) == torch.Tensor:
+    #         if attr.device != torch.device("cuda"):
+    #             attr = attr.to(torch.device("cuda"))
+    #     setattr(self, name, attr)
     def register_buffer(self, name, attr):
-        if type(attr) == torch.Tensor:
-            if attr.device != torch.device("cuda"):
-                attr = attr.to(torch.device("cuda"))
+        if isinstance(attr, torch.Tensor):
+            try:
+                device = next(self.model.parameters()).device
+            except StopIteration:
+                device = torch.device("cpu")
+
+            if attr.device != device:
+                attr = attr.to(device)
+
         setattr(self, name, attr)
 
     def make_schedule(self, ddim_num_steps, ddim_discretize="uniform", ddim_eta=0., verbose=True):
@@ -409,7 +420,7 @@ class DDIMSampler(object):
         alphas = self.model.alphas_cumprod if use_original_steps else self.ddim_alphas
         alphas_prev = self.model.alphas_cumprod_prev if use_original_steps else self.ddim_alphas_prev
         sqrt_one_minus_alphas = self.model.sqrt_one_minus_alphas_cumprod if use_original_steps else self.ddim_sqrt_one_minus_alphas
-        sigmas = self.ddim_sigmas_for_original_num_steps if use_original_steps else self.ddim_sigmas # 这玩意全是0
+        sigmas = self.ddim_sigmas_for_original_num_steps if use_original_steps else self.ddim_sigmas 
 
         # select parameters corresponding to the currently considered timestep
         a_t = torch.full((b, 1, 1, 1), alphas[index], device=device)
