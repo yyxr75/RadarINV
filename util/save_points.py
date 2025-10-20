@@ -102,7 +102,7 @@ def otsu_threshold(image, bins=256):
     return optimal_threshold
 
 
-def save_points_radial(sample, fname, folder_path, is_lidar=False):
+def save_points_radial(sample, fname, folder_path, is_lidar=False, thresh=None):
     
     # radar coordinate
     AoA_mat = np.load('CalibrationTable.npy',allow_pickle=True).item()
@@ -111,16 +111,18 @@ def save_points_radial(sample, fname, folder_path, is_lidar=False):
     if len(azimuth_coord)- sample.shape[-1] > 100:
         azimuth_coord = np.linspace(azimuth_coord[0], azimuth_coord[-1], sample.shape[-1])
     # 预测
-    out_ra = torch.sigmoid(1000*(sample-0.01))
+    # out_ra = torch.sigmoid(1000*(sample-0.01))
+    out_ra = sample
     if len(out_ra.shape) >= 3:
         out_ra_np = out_ra.mean(dim=1).detach().cpu().numpy()
         out_ra_np = np.squeeze(out_ra_np[0,...])
     else:
         out_ra_np = out_ra.detach().cpu().numpy()
 
-    # threshold = 0.01
-    threshold = otsu_threshold(out_ra_np)
-    pixel_indices = np.where(out_ra_np > threshold)
+    if thresh is None:
+        # thresh = 0.01
+        thresh = otsu_threshold(out_ra_np)
+    pixel_indices = np.where(out_ra_np > thresh)
     real_coords = []
     range_coord = np.linspace(0,out_ra_np.shape[0],out_ra_np.shape[0])/out_ra_np.shape[0]*103
     for i in range(len(pixel_indices[0])):

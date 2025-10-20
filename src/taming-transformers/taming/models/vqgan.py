@@ -69,6 +69,7 @@ class VQModel(pl.LightningModule):
         return dec
 
     def forward(self, input):
+        import pdb; pdb.set_trace()
         quant, diff, _ = self.encode(input)
         dec = self.decode(quant)
         return dec, diff

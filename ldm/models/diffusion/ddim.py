@@ -14,6 +14,7 @@ from scripts.utils import clear_color
 import torch.optim as optim
 import time
 import matplotlib.pyplot as plt
+from torchvision.utils  import save_image
 
 from sklearn.metrics import pairwise_distances
 def calculate_similarity_metrics(pc1, pc2):
@@ -127,7 +128,6 @@ class DDIMSampler(object):
         C, H, W = shape
         size = (batch_size, C, H, W)
         print(f'Data shape for DDIM sampling is {size}, eta {eta}')
-
         samples, intermediates = self.ddim_sampling(conditioning, size,
                                                     callback=callback,
                                                     img_callback=img_callback,
@@ -193,27 +193,28 @@ class DDIMSampler(object):
         size = (batch_size, C, H, W)
         print(f'Data shape for DDIM sampling is {size}, eta {eta}')
         if cond_method is None or cond_method == 'resample':
-            samples, intermediates = self.resample_sampling(original, measurement, measurement_cond_fn,  # conditioning,
-                                                        size,
-                                                        constraint_fn=constraint_fn,
-                                                        operator_fn=operator_fn,
-                                                        callback=callback,
-                                                        img_callback=img_callback,
-                                                        timesteps=timesteps,
-                                                        quantize_denoised=quantize_x0,
-                                                        mask=mask, x0=x0,
-                                                        ddim_use_original_steps=ddim_use_original_steps,
-                                                        noise_dropout=noise_dropout,
-                                                        temperature=temperature,
-                                                        score_corrector=score_corrector,
-                                                        corrector_kwargs=corrector_kwargs,
-                                                        x_T=x_T,
-                                                        log_every_t=log_every_t,
-                                                        unconditional_guidance_scale=unconditional_guidance_scale,
-                                                        unconditional_conditioning=unconditional_conditioning,
-                                                        folder_of_params=folder_of_params,
-                                                        **kwargs
-                                                        )
+            samples, intermediates = self.resample_sampling(
+            original, measurement, measurement_cond_fn,  # conditioning,
+            size,
+            constraint_fn=constraint_fn,
+            operator_fn=operator_fn,
+            callback=callback,
+            img_callback=img_callback,
+            timesteps=timesteps,
+            quantize_denoised=quantize_x0,
+            mask=mask, x0=x0,
+            ddim_use_original_steps=ddim_use_original_steps,
+            noise_dropout=noise_dropout,
+            temperature=temperature,
+            score_corrector=score_corrector,
+            corrector_kwargs=corrector_kwargs,
+            x_T=x_T,
+            log_every_t=log_every_t,
+            unconditional_guidance_scale=unconditional_guidance_scale,
+            unconditional_conditioning=unconditional_conditioning,
+            folder_of_params=folder_of_params,
+            **kwargs
+            )
             
         else:
             raise ValueError(f"Condition method string '{cond_method}' not recognized.")
@@ -290,13 +291,15 @@ class DDIMSampler(object):
 
             # Unconditional sampling step
             # pred_x0 is from DDIM, pseudo_x0 is computing \hat{x}_0 using Tweedie's formula
-            out, pred_x0, pseudo_x0, e_t = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
+            img, pred_x0, pseudo_x0, e_t = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
                                       quantize_denoised=quantize_denoised, temperature=temperature,
                                       noise_dropout=noise_dropout, score_corrector=score_corrector,
                                       corrector_kwargs=corrector_kwargs,
                                       unconditional_guidance_scale=unconditional_guidance_scale,
                                       unconditional_conditioning=unconditional_conditioning)
-            # img = out
+            x_radar = self.model.differentiable_decode_first_stage(img) # 
+            save_image(x_radar.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_radar.png', normalize=True)
+            save_image(img.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_latent.png', normalize=True)
 
             step_size_dynamic = kwargs.get('step_size_dynamic', None)
             step_size_static = kwargs.get('step_size_static', None)
@@ -306,25 +309,23 @@ class DDIMSampler(object):
                 step_size = step_size_static
             else:
                 raise ValueError('step_size_dynamic and step_size_static must be provided together')
-            
+
             for j in range(measurement_step_number):
                 # step_size = a_t*self.lr_optimizer(iters=iter_cnt, total_iters=total_steps*measurement_step_number, **kwargs)
                 # iter_cnt += 1
-                img, _ = measurement_cond_fn(x_t=out, # x_t is x_{t-1}
+                img, _ = measurement_cond_fn(x_t=img, # x_t is x_{t-1}
                                     measurement=measurement,
                                     x_prev=img, # x_prev is x_t, pure noise
-                                    x_0_hat=pseudo_x0, # Tweedie's formula output x_0_hat
+                                    x_0_hat=img, 
                                     scale = step_size,
                                     index=index-j,
                                     folder_of_params=folder_of_params,
                                     **kwargs,
                                     )
-                out = img
-                # twidie formula
-                sqrt_one_minus_alphas = self.model.sqrt_one_minus_alphas_cumprod if ddim_use_original_steps else self.ddim_sqrt_one_minus_alphas
-                sqrt_one_minus_at = torch.full((b, 1, 1, 1), sqrt_one_minus_alphas[index], device=device)
-                pseudo_x0 = (img - sqrt_one_minus_at**2 * e_t) / a_t.sqrt()
-            
+                # e_t_new = self.model.apply_model(img, t-1, c)
+                # sqrt_one_minus_at_prev = torch.full((b, 1, 1, 1), sqrt_one_minus_alphas[index - j], device=device)
+                # a_t_prev = torch.full((b, 1, 1, 1), alphas[index - j], device=device)
+                # pred_x0 = (img - sqrt_one_minus_at_prev * e_t_new) / a_t_prev.sqrt()
 
             # Callback functions if needed
             if callback: callback(i)

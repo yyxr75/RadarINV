@@ -48,9 +48,7 @@ class ConditioningMethod(ABC):
             save_process = kwargs.get('save_process', True)
             # -------pixel space or latent space-------
             X_decode = self.model.differentiable_decode_first_stage(x_0_hat) # 
-            Threshold = 0.01
-
-            Ax = self.operator.forward(X_decode, threshold=Threshold, **kwargs) # 
+            Ax = self.operator.forward(X_decode, **kwargs) # 
             difference = measurement - Ax
             norm = torch.sum(difference*difference) # L2 norm
             norm_grad = torch.autograd.grad(outputs=norm, inputs=x_prev, retain_graph=True)[0]
