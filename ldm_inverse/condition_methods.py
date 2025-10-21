@@ -44,61 +44,11 @@ class ConditioningMethod(ABC):
             measurement.requires_grad = True
             measurement = measurement.to(x_prev.device)
         if self.noiser.__name__ == 'gaussian':
-            index = kwargs.get('index', None)
-            save_process = kwargs.get('save_process', True)
-            # -------pixel space or latent space-------
             X_decode = self.model.differentiable_decode_first_stage(x_0_hat) # 
             Ax = self.operator.forward(X_decode, **kwargs) # 
             difference = measurement - Ax
             norm = torch.sum(difference*difference) # L2 norm
             norm_grad = torch.autograd.grad(outputs=norm, inputs=x_prev, retain_graph=True)[0]
-            # --------visialize------- 
-            # OUT_SUBFOLDER_FNAME = kwargs.get('OUT_SUBFOLDER_FNAME', None)
-            if index is not None and save_process and index%99==0 and index != self.index_prev:
-                print('save process: ', save_process)
-                self.index_prev = index
-                print(f'index: {index}')
-                X_decode_4show = (X_decode.mean(dim=1)-X_decode.min())/(X_decode.max()-X_decode.min())
-                Ax_4show = (Ax.mean(dim=1)-Ax.min())/(Ax.max()-Ax.min())
-                measurement_4show = (measurement.mean(dim=1)-measurement.min())/(measurement.max()-measurement.min())
-
-                difference_4show = (difference.mean(dim=1)-difference.min())/(difference.max()-difference.min())
-                init_z_4show = (x_prev.mean(dim=1)-x_prev.min())/(x_prev.max()-x_prev.min())
-                norm_grad_4show = (norm_grad.mean(dim=1)-norm_grad.min())/(norm_grad.max()-norm_grad.min())
-
-                X_decode_4show = torch.sigmoid(1000 * (X_decode.mean(dim=1, keepdim=True) - THRESHOLD))
-                # Ax_4show = torch.sigmoid(1000 * (Ax.mean(dim=1, keepdim=True) - THRESHOLD))
-                # measurement_4show = torch.sigmoid(1000 * (measurement.mean(dim=1, keepdim=True) - THRESHOLD))
-
-                # difference_4show = torch.sigmoid(1000 * (difference.mean(dim=1, keepdim=True) - THRESHOLD))
-                # init_z_4show = torch.sigmoid(1000 * (x_prev.mean(dim=1, keepdim=True) - THRESHOLD))
-                # norm_grad_4show = torch.sigmoid(1000 * (norm_grad.mean(dim=1, keepdim=True) - THRESHOLD))
-
-                fig, axs = plt.subplots(2, 3, figsize=(15, 5))
-                im0 = axs[0, 0].imshow(X_decode_4show.cpu().detach().numpy().squeeze().clip(0, 1), cmap='jet')
-                axs[0, 0].set_title('X_decode')
-                im1 = axs[0, 1].imshow(Ax_4show[0].cpu().detach().numpy().squeeze().clip(0, 1), cmap='jet')
-                axs[0, 1].set_title('Ax')
-                im2 = axs[0, 2].imshow(measurement_4show[0].cpu().detach().numpy().squeeze().clip(0, 1), cmap='jet')
-                axs[0, 2].set_title('Measurement')
-                im3 = axs[1, 0].imshow(difference_4show.cpu().detach().numpy().squeeze().clip(0, 1), cmap='jet')
-                axs[1, 0].set_title('Difference')
-                im4 = axs[1, 1].imshow(init_z_4show.cpu().detach().numpy().squeeze().clip(0, 1), cmap='jet')
-                axs[1, 1].set_title('Init_z')
-                im5 = axs[1, 2].imshow(norm_grad_4show.cpu().detach().numpy().squeeze().clip(0, 1), cmap='jet')
-                axs[1, 2].set_title('Gradient')
-                plt.tight_layout()
-                
-                # save the results
-                path = os.path.join(folder_of_params, 'progress')
-                os.makedirs(path, exist_ok=True)
-                plt.savefig(f'{path}/Ax_parallel_{index}_loss_{norm.item():.4f}.png')
-                plt.close()
-
-                # save the points
-                points_fname = f'Ax_parallel_{index}_loss_{norm.item():.4f}.bin'
-                # save_points_kradar(X_decode, points_fname, path)
-                save_points_radial(X_decode, points_fname, path)
             
         elif self.noiser.__name__ == 'poisson':
             Ax = self.operator.forward(self.model.differentiable_decode_first_stage(x_0_hat), **kwargs)

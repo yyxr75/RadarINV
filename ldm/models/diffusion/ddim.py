@@ -145,7 +145,6 @@ class DDIMSampler(object):
                                                     )
         return samples, intermediates
 
-
     def posterior_sampler(self, original, measurement, measurement_cond_fn, operator_fn,
                S,
                batch_size,
@@ -227,7 +226,8 @@ class DDIMSampler(object):
         end_lr = kwargs.get('end_lr', None)
         lr = start_lr + (end_lr - start_lr) * (1 + math.cos(2*math.pi * iters / total_iters))
         return lr
-
+    '''
+    @torch.no_grad()
     def resample_sampling(self, original, measurement, measurement_cond_fn, shape, test_var=None, constraint_fn=None, cond=None, operator_fn=None,
                      inter_timesteps=10, x_T=None, ddim_use_original_steps=False,
                      callback=None, timesteps=None, quantize_denoised=False,
@@ -335,7 +335,120 @@ class DDIMSampler(object):
                 intermediates['pred_x0'].append(pred_x0)      
 
         return img, intermediates
+    '''
+    @torch.no_grad()
+    def resample_sampling(self, original, measurement, measurement_cond_fn, shape, test_var=None, constraint_fn=None, cond=None, operator_fn=None,
+                        inter_timesteps=10, x_T=None, ddim_use_original_steps=False,
+                        callback=None, timesteps=None, quantize_denoised=False,
+                        mask=None, x0=None, img_callback=None, log_every_t=100,
+                        temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
+                        unconditional_guidance_scale=1., unconditional_conditioning=None, folder_of_params=None, **kwargs):
+        """
+        DDIM-based sampling function for ReSample.
 
+        Arguments:
+            measurement:            Measurement vector y in y=Ax+n.
+            measurement_cond_fn:    Function to perform DPS. 
+            operator_fn:            Operator to perform forward operation A(.)
+            inter_timesteps:        Number of timesteps to perform time travelling.
+
+        """
+
+        device = self.model.betas.device
+        b = shape[0]
+        if x_T is None:
+            img = torch.randn(shape, device=device)
+        else:
+            img = x_T
+        
+        # CRUCIAL: Ensure the tensor tracks gradients from the start
+        img = img.requires_grad_() # Require grad for data consistency 
+
+        if timesteps is None:
+            timesteps = self.ddpm_num_timesteps if ddim_use_original_steps else self.ddim_timesteps
+        elif timesteps is not None and not ddim_use_original_steps:
+            subset_end = int(min(timesteps / self.ddim_timesteps.shape[0], 1) * self.ddim_timesteps.shape[0]) - 1
+            timesteps = self.ddim_timesteps[:subset_end]
+            
+        intermediates = {'x_inter': [img], 'pred_x0': [img]}
+        time_range = reversed(range(0,timesteps)) if ddim_use_original_steps else np.flip(timesteps)
+        total_steps = timesteps if ddim_use_original_steps else timesteps.shape[0]
+
+        # Need for measurement consistency
+        alphas = self.model.alphas_cumprod if ddim_use_original_steps else self.ddim_alphas 
+        alphas_prev = self.model.alphas_cumprod_prev if ddim_use_original_steps else self.ddim_alphas_prev
+        betas = self.model.betas
+
+
+        measurement_scale = kwargs.get('measurement_scale', None)
+        measurement_step_number = kwargs.get('measurement_step_number', None)
+        measurement = measurement*measurement_scale
+
+        iter_cnt = 0
+        iterator = tqdm(time_range, desc='DDIM Sampler', total=total_steps)
+        for i, step in enumerate(iterator): 
+            # Instantiating parameters
+            index = total_steps - i - 1
+            ts = torch.full((b,), step, device=device, dtype=torch.long)
+            a_t = torch.full((b, 1, 1, 1), alphas[index], device=device, requires_grad=False) # Needed for ReSampling
+            a_prev = torch.full((b, 1, 1, 1), alphas_prev[index], device=device, requires_grad=False) # Needed for ReSampling
+            b_t = torch.full((b, 1, 1, 1), betas[index], device=device, requires_grad=False)            
+            if mask is not None:
+                assert x0 is not None
+                img_orig = self.model.q_sample(x0, ts)  # TODO: deterministic forward pass?
+                img = img_orig * mask + (1. - mask) * img
+
+            # Unconditional sampling step (Runs under @torch.no_grad())
+            img, pred_x0, pseudo_x0, e_t = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
+                                            quantize_denoised=quantize_denoised, temperature=temperature,
+                                            noise_dropout=noise_dropout, score_corrector=score_corrector,
+                                            corrector_kwargs=corrector_kwargs,
+                                            unconditional_guidance_scale=unconditional_guidance_scale,
+                                            unconditional_conditioning=unconditional_conditioning)
+            x_radar = self.model.differentiable_decode_first_stage(img)
+            # Assuming save_image doesn't require grad, which is typical
+            save_image(x_radar.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_radar.png', normalize=True)
+            save_image(img.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_latent.png', normalize=True)
+
+            step_size_dynamic = kwargs.get('step_size_dynamic', None)
+            step_size_static = kwargs.get('step_size_static', None)
+            if step_size_dynamic is not None and step_size_static is None:
+                step_size = a_t*step_size_dynamic
+            elif step_size_static is not None and step_size_dynamic is None:
+                step_size = step_size_static
+            else:
+                raise ValueError('step_size_dynamic and step_size_static must be provided together')
+            
+            img = img.detach().requires_grad_(True)
+            # 👇 GRADIENT RE-ENABLEMENT STARTS HERE
+            # Use torch.enable_grad() to override the outer @torch.no_grad() decorator
+            with torch.enable_grad():
+                # If 'img' was recreated in p_sample_ddim without requires_grad,
+                # you would need to re-enable it: img = img.detach().requires_grad_()
+                # Assuming it retains requires_grad=True from the initial call:
+                for j in range(measurement_step_number):
+                    # This function call and any internal operations on 'img' will now track gradients.
+                    img, _ = measurement_cond_fn(x_t=img, # x_t is x_{t-1}
+                                                measurement=measurement,
+                                                x_prev=img, # x_prev is x_t, pure noise
+                                                x_0_hat=img, 
+                                                scale = step_size,
+                                                index=index-j,
+                                                folder_of_params=folder_of_params,
+                                                **kwargs,
+                                                )
+                    # ... (commented-out prediction part)
+            # 👆 GRADIENT RE-ENABLEMENT ENDS HERE
+            # The code returns to being in a torch.no_grad() context.
+
+            # Callback functions if needed (continue under @torch.no_grad())
+            if callback: callback(i)
+            if img_callback: img_callback(pred_x0, i)
+            if index % log_every_t == 0 or index == total_steps - 1:
+                intermediates['x_inter'].append(img)
+                intermediates['pred_x0'].append(pred_x0)      
+
+        return img, intermediates
     def stochastic_resample(self, pseudo_x0, x_t, a_t, sigma):
         """
         Function to resample x_t based on ReSample paper.
@@ -400,7 +513,7 @@ class DDIMSampler(object):
 
         return img, intermediates
 
-
+    @torch.no_grad()
     def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
                       unconditional_guidance_scale=1., unconditional_conditioning=None):
