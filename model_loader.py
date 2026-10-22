@@ -15,6 +15,10 @@ def load_model_from_config(config, ckpt, device, train=False):
     model = instantiate_from_config(config.model)
     _, _ = model.load_state_dict(sd, strict=False)
     
+    # inference never enters ema_scope, so the EMA copy is unused: drop it to save ~4 GB of GPU memory
+    if getattr(model, 'use_ema', False) and hasattr(model, 'model_ema'):
+        del model.model_ema
+        model.use_ema = False
     model.to(device)
 
     if train:

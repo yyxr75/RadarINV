@@ -181,7 +181,7 @@ class RadarImagingOperator(LinearOperator):
         self.d = self.wavelength / 2
         
         # Phase difference calculation based on x-coordinates (W dimension)
-        azimuth_grid = self.x_coords.float() * 150 / W - 75 # H x W
+        _span = float(__import__('os').environ.get('RADARINV_AZSPAN', 75)); azimuth_grid = self.x_coords.float() * (2 * _span) / W - _span # H x W
         self.theta_grid = torch.deg2rad(azimuth_grid)      # H x W
         
         # phase_diff shape: H x W
@@ -251,9 +251,65 @@ class RadarImagingOperator(LinearOperator):
         output = output_range_azimuth.unsqueeze(1).repeat(1, 3, 1, 1)  # N x 3 x H x W
         return output
 
+    def _init_calib(self):
+        """Point-spread operator built from the dataset's own calibrated beamforming matrix.
+        The measurement y was produced as |CalibMat @ MIMO_spectrum|, so a scene x seen by the
+        same array gives |x @ K^T| with K = (CalibMat*window) @ CalibMat^H -- the azimuth PSF,
+        carrying the true main-lobe width and sidelobes of the 192-element virtual array."""
+        import numpy as _np
+        t = _np.load('CalibrationTable.npy', allow_pickle=True).item()
+        C = _np.asarray(t['Signal'])[..., 5].astype(_np.complex64)     # 751 x 192
+        w = _np.asarray(t['H'])[0].ravel().astype(_np.complex64)       # 192 Hamming window
+        ntx, nrx = map(int, __import__('os').environ.get('RADARINV_CHANS', '12,16').split(','))
+        idx = _np.array([tx * 16 + rx for tx in range(ntx) for rx in range(nrx)])   # virtual channel = tx*16 + rx
+        C, w = C[:, idx], w[idx]
+        K = (C * w[None, :]) @ C.conj().T * (192.0 / len(idx))         # 751 x 751, scaled as for the full array
+        q = _np.linspace(0, C.shape[0] - 1, self.W)
+        K = _np.stack([_np.interp(q, _np.arange(C.shape[0]), K[:, j]) for j in range(K.shape[1])], 1)
+        K = _np.stack([_np.interp(q, _np.arange(C.shape[0]), K[i, :]) for i in range(K.shape[0])], 0)
+        K = K / 2450.0        # match the output scale of the ideal operator, so gamma/zeta keep their meaning
+        self.K = torch.from_numpy(K.astype(_np.complex64)).to(self.device)
+
+    def cond_fn_calib(self, img, ref_img=None, **kwargs):
+        if not hasattr(self, 'K'):
+            self._init_calib()
+        mask = img.mean(dim=1)                                  # N x H x W
+        out = torch.abs(torch.matmul(mask.to(self.K.dtype), self.K.transpose(0, 1)))
+        return out.unsqueeze(1).repeat(1, 3, 1, 1)
+
+    def cond_fn_fast(self, img, ref_img=None, **kwargs):
+        """Exact reformulation of cond_fn. The FFT is linear, so averaging over the azimuth cells
+        after the FFT equals averaging before it; and self.signals does not depend on the range
+        index, so the average over cells is a single matmul. Same output, far less memory/time."""
+        mask = img.mean(dim=1)                               # N x H x W
+        S = self.signals[0, :, 0, :]                         # NumA x W (identical for every h)
+        u = torch.einsum('nhw,aw->nah', mask.to(S.dtype), S) / self.W   # N x NumA x H
+        F = torch.fft.fft(u, dim=1, n=self.W)                # N x W x H
+        F = torch.roll(F, shifts=self.W // 2, dims=1)
+        out = torch.abs(F).permute(0, 2, 1)                  # N x H x W
+        return out.unsqueeze(1).repeat(1, 3, 1, 1)
+
+
+    def cond_fn_learned(self, img, ref_img=None, **kwargs):
+        """Learned observation model A_theta(x) = |K (g(x) * x)| s(r) + c(r), trained on paired train data (learnedA/learnA.py),
+        evaluated at 256x384 and upsampled; expects y min-max normalised (RADARINV_FAST_OP=learned also switches load_data)."""
+        import torch.nn.functional as F_
+        if not hasattr(self, 'A_learned'):
+            import os as _os
+            L = __import__('os').environ.get('RADARINV_LEARNED_DIR')
+            g = {'__file__': L + '/learnA.py', '__name__': 'learnedA'}; src = open(L + '/learnA.py').read(); cwd = _os.getcwd(); _os.chdir(L)
+            exec(src[:src.index('X=lambda sp')], g); _os.chdir(cwd)
+            m = g['Fwd'](True).to(self.device); m.load_state_dict(torch.load(L + '/Alearn.pt', map_location=self.device)); m.eval()
+            for p_ in m.parameters(): p_.requires_grad_(False)
+            self.A_learned = m
+        x = F_.avg_pool2d(img.mean(dim=1, keepdim=True), 2)[:, 0].clamp(0, 1)
+        y = self.A_learned(x)[:, None]
+        y = F_.interpolate(y, size=img.shape[-2:], mode='bilinear', align_corners=False)
+        return y.repeat(1, 3, 1, 1)
+
     def forward(self, img, ref_img=None, num_virtual_antennas=86, max_distance=103, num_distance_bins=512, num_angle_bins=768, **kwargs):
         # forward method calls cond_fn
-        return self.cond_fn(img, ref_img)
+        return {'calib': self.cond_fn_calib, '1': self.cond_fn_fast, 'learned': self.cond_fn_learned}.get(__import__('os').environ.get('RADARINV_FAST_OP',''), self.cond_fn)(img, ref_img)
 
     def transpose(self, data, **kwargs):
         # Placeholder implementation for the transpose operation (e.g., conjugate transpose for complex operators)

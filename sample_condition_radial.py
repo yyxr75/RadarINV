@@ -36,6 +36,8 @@ def load_data(fname, shape=(512, 768), target_shape=None):
         data = data[::scale_y, ::scale_x]
     radar = torch.from_numpy(data).unsqueeze(0).unsqueeze(0).float()
 
+    if os.environ.get('RADARINV_FAST_OP','')=='learned':
+        return (radar-radar.min())/(radar.max()-radar.min()+1e-8)
     # Normalize to target mean/var
     orig_mean = radar.mean()
     orig_std = radar.std()
@@ -183,6 +185,7 @@ for file_path in input_files:
     x_samples_ddim = model.decode_first_stage(samples_ddim.detach())
     print(f'sample max {x_samples_ddim.max()}, min: {x_samples_ddim.min()}, avg: {x_samples_ddim.mean()}')
 
+    import numpy as _np; _np.save(os.path.join(folder_of_params, f'{fname}_decoded.npy'), x_samples_ddim.mean(dim=1)[0].detach().cpu().numpy())
     save_points_radial(x_samples_ddim, fname, folder_of_params, is_lidar=False, thresh=args.thresh_points)
     save_image(x_samples_ddim.mean(dim=1), os.path.join(folder_of_params, 'recon', f'{fname}_recon.png'), normalize=True)
 

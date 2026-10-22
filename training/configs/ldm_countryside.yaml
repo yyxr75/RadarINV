@@ -1,0 +1,108 @@
+model:
+  base_learning_rate: 4.5e-06
+  target: ldm.models.diffusion.ddpm.LatentDiffusion
+  params:
+    linear_start: 0.0015
+    linear_end: 0.0195
+    num_timesteps_cond: 1
+    log_every_t: 100
+    timesteps: 1000
+    first_stage_key: lidar_ra
+    # cond_stage_key: radar_ra
+    image_size: [32,48] 
+    channels: 4 
+    first_stage_trainable: false
+    cond_stage_trainable: false
+    diffusion_trainable: true
+    conditioning_key: crossattn
+    monitor: val/loss_simple_ema
+    unet_config:
+      target: ldm.modules.diffusionmodules.openaimodel.UNetModel
+      params:
+        image_size: [32, 48]
+        in_channels: 4 
+        out_channels: 4 
+        model_channels: 512
+        attention_resolutions:
+        - 4
+        - 2
+        - 1
+        num_res_blocks: 2
+        channel_mult:
+        - 1
+        - 2
+        - 4
+        num_head_channels: 32
+    
+    first_stage_config:
+      target: taming.models.vqgan.VQModel
+      params:
+        ckpt_path: "../models/first_stage_models/epoch=000323.ckpt"
+        monitor: "val/rec_loss"
+        embed_dim: 4
+        n_embed: 2048
+        image_key: lidar_ra
+
+        lossconfig:
+          target: taming.modules.losses.vqperceptual.VQLPIPSWithDiscriminator
+          params:
+            disc_conditional: false
+            disc_in_channels: 3
+            disc_start: 10000
+            disc_weight: 0.8
+            codebook_weight: 1.0
+
+        ddconfig:
+          double_z: false
+          z_channels: 8
+          resolution: 256
+          in_channels: 3
+          out_ch: 3
+          ch: 128
+          ch_mult: [1,1,2,2,4]  # num_down = len(ch_mult)-1
+          num_res_blocks: 2
+          attn_resolutions: []
+          dropout: 0.0
+
+    cond_stage_config: __is_unconditional__
+    
+    constraint_stage_config: __is_unconditional__
+
+data:
+  target: main.DataModuleFromConfig
+  params:
+    batch_size: 2
+    num_workers: 0
+    wrap: True
+    train:
+      target: ldm.data.datasetRADIal_pkl.DatasetRADIal
+      params:
+        data_root: "splits/radialx_infos_train_countryside_uniq.pkl"
+        RBINS: 512
+        ABINS: 768
+        M: 0
+    validation:
+      target: ldm.data.datasetRADIal_pkl.DatasetRADIal
+      params:
+        data_root: "splits/radialx_infos_val64.pkl"
+        RBINS: 512
+        ABINS: 768
+        M: 0
+
+
+lightning:
+  callbacks:
+    image_logger:
+      target: main.ImageLogger
+      params:
+        batch_frequency: 1000000000
+        max_images: 8
+        increase_log_steps: False
+    metrics_over_trainsteps_checkpoint:
+      params:
+        every_n_train_steps: 10000
+  trainer:
+    benchmark: True
+    accelerator: ddp
+    gpus: 0,1
+    accumulate_grad_batches: 4

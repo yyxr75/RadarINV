@@ -115,6 +115,12 @@ class ResnetBlock(nn.Module):
                                                     padding=0)
 
     def forward(self, x, temb):
+        import os, torch.utils.checkpoint as _cp
+        if os.environ.get('RADARINV_CKPT') == '1' and torch.is_grad_enabled() and x.requires_grad:
+            return _cp.checkpoint(self._forward_inner, x, temb, use_reentrant=False)
+        return self._forward_inner(x, temb)
+
+    def _forward_inner(self, x, temb):
         h = x
         h = self.norm1(h)
         h = nonlinearity(h)
@@ -166,6 +172,12 @@ class AttnBlock(nn.Module):
 
 
     def forward(self, x):
+        import os, torch.utils.checkpoint as _cp
+        if os.environ.get('RADARINV_CKPT') == '1' and torch.is_grad_enabled() and x.requires_grad:
+            return _cp.checkpoint(self._forward_inner, x, use_reentrant=False)
+        return self._forward_inner(x)
+
+    def _forward_inner(self, x):
         h_ = x
         h_ = self.norm(h_)
         q = self.q(h_)

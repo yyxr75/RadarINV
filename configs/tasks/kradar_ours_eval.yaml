@@ -1,0 +1,23 @@
+conditioning:
+  main_sampler: resample
+  method: ps # Do not touch
+  params:
+    scale: 0.5
+
+data:
+  name: DatasetRADIal
+  root: "demo"
+  RBINS: 512 # 128
+  ABINS: 768 # 192
+  M: 0
+
+
+measurement:
+  operator:
+    name: radar_imaging
+    num_antennas: 84
+    shape: [512, 768] #[128, 192]
+  
+  noise: 
+    name: gaussian
+    sigma: 0.01

@@ -22,4 +22,13 @@
 results*/
 __pycache__/
 models/
-src/
+src/third_party/
+results_radial/
+# outputs written by experiments/ (scripts, frame lists and json inputs are tracked)
+experiments/**/points_*/
+experiments/full/
+experiments/tab5/
+experiments/sweep_tk/
+experiments/diffradar/
+experiments/radardiff_runs/
+experiments/radardiff_data/

@@ -48,6 +48,27 @@ class ConditioningMethod(ABC):
             Ax = self.operator.forward(X_decode, **kwargs) # 
             difference = measurement - Ax
             norm = torch.sum(difference*difference) # L2 norm
+            if __import__('os').environ.get('RADARINV_LIK','gaussian')=='laplace':
+                # Laplacian likelihood: L1 data term; scale b set from the current mean |residual| so the gradient
+                # magnitude matches the Gaussian term on average (2*mean|r|*sign(r) vs 2r), keeping zeta comparable
+                norm = 2.0 * difference.abs().mean().detach() * difference.abs().sum()
+            # --- optional constraints on the decoded occupancy map (env-controlled) ---
+            import os as _os
+            _l1  = float(_os.environ.get('RADARINV_L1', 0.0))    # sparsity: occupancy is ~1% of cells
+            _neg = float(_os.environ.get('RADARINV_NEG', 0.0))   # non-negativity: occupancy cannot be < 0
+            _hi  = float(_os.environ.get('RADARINV_HI', 0.0))    # upper bound: occupancy cannot exceed 1
+            _tv  = float(_os.environ.get('RADARINV_TV', 0.0))    # total variation: spatial coherence
+            if _os.environ.get('RADARINV_DBGREG'):
+                _tvv=((X_decode[...,1:,:]-X_decode[...,:-1,:]).abs().sum()
+                      +(X_decode[...,:,1:]-X_decode[...,:,:-1]).abs().sum())
+                print("[REG] data=%.4e  l1=%.4e  tv=%.4e  neg=%.4e"%(
+                    norm.item(), X_decode.abs().sum().item(), _tvv.item(),
+                    (torch.relu(-X_decode)**2).sum().item()), flush=True)
+            if _l1:  norm = norm + _l1  * X_decode.abs().sum()
+            if _neg: norm = norm + _neg * (torch.relu(-X_decode) ** 2).sum()
+            if _hi:  norm = norm + _hi  * (torch.relu(X_decode - 1.0) ** 2).sum()
+            if _tv:  norm = norm + _tv  * ((X_decode[..., 1:, :] - X_decode[..., :-1, :]).abs().sum()
+                                           + (X_decode[..., :, 1:] - X_decode[..., :, :-1]).abs().sum())
             norm_grad = torch.autograd.grad(outputs=norm, inputs=x_prev, retain_graph=True)[0]
             
         elif self.noiser.__name__ == 'poisson':

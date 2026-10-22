@@ -298,8 +298,8 @@ class DDIMSampler(object):
                                       unconditional_guidance_scale=unconditional_guidance_scale,
                                       unconditional_conditioning=unconditional_conditioning)
             x_radar = self.model.differentiable_decode_first_stage(img) # 
-            save_image(x_radar.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_radar.png', normalize=True)
-            save_image(img.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_latent.png', normalize=True)
+            if __import__('os').environ.get('RADARINV_NODEBUG')!='1': save_image(x_radar.mean(dim=1), __import__('os').environ.get('RADARINV_DEBUG_DIR','/tmp')+'/tmp_radar.png', normalize=True)
+            if __import__('os').environ.get('RADARINV_NODEBUG')!='1': save_image(img.mean(dim=1), __import__('os').environ.get('RADARINV_DEBUG_DIR','/tmp')+'/tmp_latent.png', normalize=True)
 
             step_size_dynamic = kwargs.get('step_size_dynamic', None)
             step_size_static = kwargs.get('step_size_static', None)
@@ -405,10 +405,10 @@ class DDIMSampler(object):
                                             corrector_kwargs=corrector_kwargs,
                                             unconditional_guidance_scale=unconditional_guidance_scale,
                                             unconditional_conditioning=unconditional_conditioning)
-            x_radar = self.model.differentiable_decode_first_stage(img)
+            if __import__('os').environ.get('RADARINV_NODEBUG')!='1': x_radar = self.model.differentiable_decode_first_stage(img)
             # Assuming save_image doesn't require grad, which is typical
-            save_image(x_radar.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_radar.png', normalize=True)
-            save_image(img.mean(dim=1), '/home/icclab/Documents/yyl/RadarDIP/RadarINV/results_512x768/tmp_latent.png', normalize=True)
+            if __import__('os').environ.get('RADARINV_NODEBUG')!='1': save_image(x_radar.mean(dim=1), __import__('os').environ.get('RADARINV_DEBUG_DIR','/tmp')+'/tmp_radar.png', normalize=True)
+            if __import__('os').environ.get('RADARINV_NODEBUG')!='1': save_image(img.mean(dim=1), __import__('os').environ.get('RADARINV_DEBUG_DIR','/tmp')+'/tmp_latent.png', normalize=True)
 
             step_size_dynamic = kwargs.get('step_size_dynamic', None)
             step_size_static = kwargs.get('step_size_static', None)
@@ -426,12 +426,17 @@ class DDIMSampler(object):
                 # If 'img' was recreated in p_sample_ddim without requires_grad,
                 # you would need to re-enable it: img = img.detach().requires_grad_()
                 # Assuming it retains requires_grad=True from the initial call:
+                _tw = __import__('os').environ.get('RADARINV_TWEEDIE', '0') == '1'
+                _et = e_t.detach() if _tw else None
                 for j in range(measurement_step_number):
+                    # Tweedie estimate of the clean latent, differentiable in img (the score is frozen).
+                    # Without this, the measurement term compares A(decode(noisy latent)) against y.
+                    _x0h = ((img - (1. - a_t).sqrt() * _et) / a_t.sqrt()) if _tw else img
                     # This function call and any internal operations on 'img' will now track gradients.
                     img, _ = measurement_cond_fn(x_t=img, # x_t is x_{t-1}
                                                 measurement=measurement,
                                                 x_prev=img, # x_prev is x_t, pure noise
-                                                x_0_hat=img, 
+                                                x_0_hat=_x0h, 
                                                 scale = step_size,
                                                 index=index-j,
                                                 folder_of_params=folder_of_params,
