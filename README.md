@@ -62,26 +62,26 @@ then set `RADIAL_ROOT` and `KRADAR_ROOT`. The folders used and the data splits a
 
 ## Results
 
-**RADIal** (424 test frames). CD, UCD and MHD in meters.
+**RADIal** (424 test frames). CD, UCD, MHD and UMHD in meters; metric definitions follow [Luan et al., ICRA 2024](https://arxiv.org/abs/2404.06012), see [docs/REPRODUCE.md](docs/REPRODUCE.md#4-evaluation-protocol).
 
-| Method | Supervised training | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ |
-|---|:-:|:-:|:-:|:-:|:-:|
-| CFAR | ✗ | 238.4 | 5.11 | 2.24 | 3.06 |
-| L1 Reg | ✗ | 147.6 | 4.74 | 2.47 | 3.00 |
-| L2 Reg | ✗ | 171.1 | 4.39 | 2.00 | 2.70 |
-| RadarHD | ✓ | 192.2 | 3.84 | 1.76 | 2.75 |
-| Diffradar | ✓ | 169.5 | 5.23 | 2.44 | 3.10 |
-| Radar-Diffusion | ✓ | 143.6 | 3.94 | **0.44** | 3.51 |
-| **RadarINV (ours)** | ✗ | **123.0** | **3.59** | 1.24 | **2.40** |
+| Method | Supervised training | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ | UMHD ↓ |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| CFAR | ✗ | 238.4 | 5.11 | 2.88 | 1.16 | 1.16 |
+| L1 Reg | ✗ | 147.6 | 4.74 | 2.27 | 0.83 | 0.57 |
+| L2 Reg | ✗ | 171.1 | 4.39 | 2.39 | **0.72** | 0.58 |
+| RadarHD | ✓ | 192.2 | 3.84 | **2.08** | 1.00 | **0.15** |
+| Diffradar | ✓ | 169.5 | 5.23 | 2.79 | 1.38 | 1.09 |
+| Radar-Diffusion | ✓ | 143.6 | 3.94 | 3.51 | 0.95 | 0.95 |
+| **RadarINV (ours)** | ✗ | **123.0** | **3.59** | 2.35 | 0.86 | 0.74 |
 
 **K-Radar** (46 test frames, same prior, no method trained on K-Radar).
 
-| Method | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ |
-|---|:-:|:-:|:-:|:-:|
-| CFAR | 799.0 | 25.05 | 7.76 | 17.33 |
-| L1 Reg | 173.7 | 3.84 | 3.02 | 3.02 |
-| L2 Reg | 170.1 | 3.29 | **1.63** | 1.95 |
-| **RadarINV (ours)** | **159.9** | **3.09** | 1.80 | **1.90** |
+| Method | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ | UMHD ↓ |
+|---|:-:|:-:|:-:|:-:|:-:|
+| CFAR | 799.0 | 25.05 | 17.29 | 15.02 | 15.02 |
+| L1 Reg | 173.7 | 3.84 | **0.82** | 1.32 | **0.51** |
+| L2 Reg | 170.1 | 3.29 | 1.66 | **0.94** | 0.54 |
+| **RadarINV (ours)** | **159.9** | **3.09** | 1.29 | 1.04 | 0.88 |
 
 ![results](assets/radial_results.png)
 

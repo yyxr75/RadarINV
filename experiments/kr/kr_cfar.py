@@ -17,5 +17,5 @@ for f in (2,3,4,6):
     if best is None or v<best[0]: best=(v,f)
 d=run(pairs("test"),best[1]); os.makedirs("points_cfar",exist_ok=True)
 for fid,(s,P) in d.items(): np.concatenate([P,np.zeros((len(P),1))],1).astype(np.float32).tofile("points_cfar/%s.bin"%fid)
-m={k:float(np.mean([s[k] for s,_ in d.values()])) for k in ["FID","CD","UCD","MHD","pts"]}
+m={k:float(np.mean([s[k] for s,_ in d.values()])) for k in ["FID","CD","UCD","MHD","UMHD","pts"]}
 print("TEST CFAR (f=%g): CD %.3f UCD %.3f FID %.1f pts %.0f n=%d"%(best[1],m["CD"],m["UCD"],m["FID"],m["pts"],len(d))); json.dump(dict(m,f=best[1]),open("kr_cfar_test.json","w"))

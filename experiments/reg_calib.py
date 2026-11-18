@@ -42,7 +42,7 @@ for reg in ["l1","l2"]:
                     P=to_xy(x,th)
                     if len(P)>=2: per.setdefault(name,{})[f]=score(P,G[f])
         for name,pp in per.items():
-            s={k:float(np.mean([v[k] for v in pp.values()])) for k in ["FID","CD","UCD","MHD","pts"]}; s["lam"]=lam; s["extract"]=name; s["n"]=len(pp)
+            s={k:float(np.mean([v[k] for v in pp.values()])) for k in ["FID","CD","UCD","MHD","UMHD","pts"]}; s["lam"]=lam; s["extract"]=name; s["n"]=len(pp)
             print("%s ntx=%d nrx=%d lam=%g %-8s CD %.3f UCD %.3f pts %.0f n=%d"%(reg,ntx,nrx,lam,name,s["CD"],s["UCD"],s["pts"],s["n"]),flush=True)
             if best is None or s["CD"]<best["CD"]: best=s
     res[reg]=best

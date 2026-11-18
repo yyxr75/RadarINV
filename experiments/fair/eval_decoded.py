@@ -9,6 +9,6 @@ for g in sys.argv[2:]:
     for p in sorted(glob.glob(g)):
         f = os.path.basename(p)[:6]; P = ror(pts(load(p), "top8000"), 0.5, 2)
         s = score(P, np.fromfile(D + "lidars_no_ground/%s.bin" % f, np.float32).reshape(-1, 3)[:, :2])
-        res[f] = {k: float(s[k]) for k in ["FID", "CD", "UCD", "MHD", "pts"]}
+        res[f] = {k: float(s[k]) for k in ["FID", "CD", "UCD", "MHD", "UMHD", "pts"]}
 json.dump(res, open(sys.argv[1], "w"), indent=0)
 print(len(res), "frames; mean CD %.3f" % np.mean([r["CD"] for r in res.values()]) if res else "no frames")

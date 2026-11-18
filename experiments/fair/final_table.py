@@ -16,8 +16,8 @@ for name,d,c in rows:
         P=ld(p,c)
         if len(P)<2: continue
         r=score(P,ld(D+"lidars_no_ground/%s.bin"%f,3)); s.append(r); per.setdefault(name,{})[f]=r["CD"]
-    m={k:float(np.mean([x[k] for x in s])) for k in ["FID","CD","UCD","MHD","pts"]}; out[name]=dict(m,n=len(s))
-    print("%-44s FID %6.1f  CD %.3f  UCD %.3f  MHD %.3f  pts %7.0f  n=%d"%(name,m["FID"],m["CD"],m["UCD"],m["MHD"],m["pts"],len(s)))
+    m={k:float(np.mean([x[k] for x in s])) for k in ["FID","CD","UCD","MHD","UMHD","pts"]}; out[name]=dict(m,n=len(s))
+    print("%-44s FID %6.1f  CD %.3f  UCD %.3f  MHD %.3f  UMHD %.3f  pts %7.0f  n=%d"%(name,m["FID"],m["CD"],m["UCD"],m["MHD"],m["UMHD"],m["pts"],len(s)))
 ours=per["Ours final"]
 for b in ["L1, real radar (val-tuned)","L2, real radar (val-tuned)","RadarHD (stored, supervised)","Radar-Diffusion (retrained, supervised)"]:
     fs=[f for f in ours if f in per[b]]; d=np.array([ours[f]-per[b][f] for f in fs]); rng=np.random.default_rng(0); bs=[d[rng.integers(0,len(d),len(d))].mean() for _ in range(10000)]

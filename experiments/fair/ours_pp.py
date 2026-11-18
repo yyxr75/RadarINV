@@ -25,5 +25,5 @@ os.makedirs("points_ours_pp",exist_ok=True); res=[]
 for p in sorted(glob.glob("../full/out*/*/*_decoded.npy")):
     f=os.path.basename(p)[:6]; P=ror(pts(load(p),best[0]),best[1],best[2]); np.concatenate([P,np.zeros((len(P),1))],1).astype(np.float32).tofile("points_ours_pp/%s.bin"%f)
     res.append(score(P,np.fromfile(D+"lidars_no_ground/%s.bin"%f,np.float32).reshape(-1,3)[:,:2]))
-m={k:float(np.mean([s[k] for s in res])) for k in ["FID","CD","UCD","MHD","pts"]}; print("TEST Ours+post: CD %.3f UCD %.3f FID %.1f MHD %.3f pts %.0f n=%d"%(m["CD"],m["UCD"],m["FID"],m["MHD"],m["pts"],len(res)))
+m={k:float(np.mean([s[k] for s in res])) for k in ["FID","CD","UCD","MHD","UMHD","pts"]}; print("TEST Ours+post: CD %.3f UCD %.3f FID %.1f MHD %.3f UMHD %.3f pts %.0f n=%d"%(m["CD"],m["UCD"],m["FID"],m["MHD"],m["UMHD"],m["pts"],len(res)))
 json.dump(dict(m,choice=list(best)),open("ours_pp_test.json","w"))

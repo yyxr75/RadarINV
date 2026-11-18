@@ -74,9 +74,12 @@ Table VII), `RADARINV_CHANS=ntx,nrx` (virtual-channel subset), `RADARINV_DEBUG_D
 `experiments/eval_points.py <points_dir> <frame_list.txt> [label] [out.json]` scores a folder of point clouds
 (`<id>.bin`, float32, x/y first) against the ground-removed LiDAR (`lidars_no_ground`), in BEV coordinates:
 
+The metric set and definitions follow Luan et al., *Diffusion-Based Point Cloud Super-Resolution for mmWave Radar Data*, ICRA 2024.
+
 - **CD**: mean predicted→GT plus mean GT→predicted nearest-neighbor distance (Chamfer distance).
-- **UCD**: the unidirectional predicted→GT term.
-- **MHD**: the modified Hausdorff distance (Dubuisson and Jain, ICPR 1994), the larger of the mean predicted→GT and the mean GT→predicted nearest-neighbor distances.
+- **MHD**: modified Hausdorff distance, the larger of the median predicted→GT and the median GT→predicted nearest-neighbor distances (as in RadarHD).
+- **UCD**: unidirectional CD, the mean GT→predicted nearest-neighbor distance (LiDAR to prediction only).
+- **UMHD**: unidirectional MHD, the median GT→predicted nearest-neighbor distance.
 - **FID<sub>BEV</sub>**: Fréchet distance between the (x, y) coordinates of the two point sets.
 
 ## 5. Reproducing the paper
