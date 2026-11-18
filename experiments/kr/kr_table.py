@@ -18,8 +18,8 @@ for nm,fn in rows.items():
     s=[]
     for f in sub:
         P=fn(f); G=gt(P_[f][1]); r=score(P,G); s.append(r); per.setdefault(nm,[]).append(r["CD"])
-    m={k:float(np.mean([x[k] for x in s])) for k in ["FID","CD","UCD","HD","UMHD","pts"]}; res[nm]=m
-    print("%-40s FID %7.1f CD %6.3f UCD %6.3f MHD %6.1f UMHD %6.1f pts %6.0f"%(nm,m["FID"],m["CD"],m["UCD"],m["HD"],m["UMHD"],m["pts"]))
+    m={k:float(np.mean([x[k] for x in s])) for k in ["FID","CD","UCD","MHD","pts"]}; res[nm]=m
+    print("%-40s FID %7.1f CD %6.3f UCD %6.3f MHD %6.3f pts %6.0f"%(nm,m["FID"],m["CD"],m["UCD"],m["MHD"],m["pts"]))
 o=np.array(per["Ours (val rule top8000)"])
 for b in ["L1 Reg","L2 Reg","CFAR","Radar-Diffusion"]:
     d=o-np.array(per[b]); rng=np.random.default_rng(0); bs=[d[rng.integers(0,len(d),len(d))].mean() for _ in range(10000)]

@@ -1,10 +1,11 @@
 """Score a directory of point clouds with the paper's stored evaluation protocol.
 
-Every formula here was checked against the stored per-frame JSON records and
-reproduces them to 4+ decimals: GT is the uncropped ground-removed LiDAR, the
-four distance metrics use first-power Euclidean nearest-neighbour distances,
-and FID_BEV is the Frechet distance between the (x, y) coordinates of the two
-point sets.  Usage: eval_points.py <points_dir> <frame_list.txt> [label]
+GT is the uncropped ground-removed LiDAR. Distances are first-power Euclidean
+nearest-neighbour distances on the (x, y) coordinates, in meters, with
+a = predicted->GT and b = GT->predicted:
+CD = mean(a) + mean(b), UCD = mean(a), MHD = max(mean(a), mean(b)) (modified
+Hausdorff distance, Dubuisson and Jain, ICPR 1994). FID_BEV is the Frechet
+distance between Gaussian fits to the (x, y) coordinates of the two point sets.  Usage: eval_points.py <points_dir> <frame_list.txt> [label]
 """
 import sys, os, json, numpy as np
 from scipy.spatial import cKDTree
@@ -18,7 +19,7 @@ def frechet(a, b):
 
 def score(P, G):
     a = cKDTree(G).query(P)[0]; b = cKDTree(P).query(G)[0]
-    return dict(CD=a.mean() + b.mean(), UCD=a.mean(), HD=max(a.max(), b.max()), UMHD=a.max(),
+    return dict(CD=a.mean() + b.mean(), UCD=a.mean(), MHD=max(a.mean(), b.mean()),
                 FID=frechet(P, G), pts=len(P))
 
 def load_pts(path, cols):
@@ -37,7 +38,7 @@ def evaluate(points_dir, frames, cols=3):
     return per
 
 def summarise(per):
-    keys = ["FID", "CD", "UCD", "HD", "UMHD", "pts"]
+    keys = ["FID", "CD", "UCD", "MHD", "pts"]
     out = {k: float(np.mean([v[k] for v in per.values()])) for k in keys}; return dict(out, n=len(per))
 
 if __name__ == "__main__":
@@ -46,6 +47,6 @@ if __name__ == "__main__":
     out = sys.argv[4] if len(sys.argv) > 4 else os.path.join(os.path.dirname(pdir.rstrip("/")), "eval.json")
     per = evaluate(pdir, frames, cols=4 if "radars_pcd" in pdir else 3)
     s = summarise(per)
-    print("%-28s n=%-4d FID %8.2f  CD %6.3f  UCD %6.3f  HD %8.2f  UMHD %7.2f  pts %7.0f" % (
-        label, s["n"], s["FID"], s["CD"], s["UCD"], s["HD"], s["UMHD"], s["pts"]))
+    print("%-28s n=%-4d FID %8.2f  CD %6.3f  UCD %6.3f  MHD %6.3f  pts %7.0f" % (
+        label, s["n"], s["FID"], s["CD"], s["UCD"], s["MHD"], s["pts"]))
     json.dump({"summary": s, "per_frame": per}, open(out, "w"), indent=1)

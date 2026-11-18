@@ -49,5 +49,5 @@ elif sys.argv[1] == "eval":
         G = np.fromfile(SP + "/kradar_gt/" + f, np.float32).reshape(-1, 3)[:, :2]
         if len(P) >= 2 and len(G) >= 2: per[f[:-4]] = score(P, G)
     s = summarise(per)
-    print("%-28s n=%-4d FID %8.2f  CD %6.3f  UCD %6.3f  HD %8.2f  UMHD %7.2f  pts %7.0f" % (label, s["n"], s["FID"], s["CD"], s["UCD"], s["HD"], s["UMHD"], s["pts"]))
+    print("%-28s n=%-4d FID %8.2f  CD %6.3f  UCD %6.3f  MHD %6.3f  pts %7.0f" % (label, s["n"], s["FID"], s["CD"], s["UCD"], s["MHD"], s["pts"]))
     json.dump({"summary": s, "per_frame": per}, open(out, "w"), indent=1)

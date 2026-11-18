@@ -62,26 +62,26 @@ then set `RADIAL_ROOT` and `KRADAR_ROOT`. The folders used and the data splits a
 
 ## Results
 
-**RADIal** (424 test frames).
+**RADIal** (424 test frames). CD, UCD and MHD in meters.
 
-| Method | Supervised training | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ | UMHD ↓ |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|
-| CFAR | ✗ | 238.4 | 5.11 | 2.24 | **122.6** | 36.9 |
-| L1 Reg | ✗ | 147.6 | 4.74 | 2.47 | 144.1 | 34.1 |
-| L2 Reg | ✗ | 171.1 | 4.39 | 2.00 | 140.3 | 37.7 |
-| RadarHD | ✓ | 192.2 | 3.84 | 1.76 | 161.7 | 15.0 |
-| Diffradar | ✓ | 169.5 | 5.23 | 2.44 | 136.2 | 26.2 |
-| Radar-Diffusion | ✓ | 143.6 | 3.94 | **0.44** | 171.2 | **11.5** |
-| **RadarINV (ours)** | ✗ | **123.0** | **3.59** | 1.24 | 141.0 | 26.0 |
+| Method | Supervised training | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ |
+|---|:-:|:-:|:-:|:-:|:-:|
+| CFAR | ✗ | 238.4 | 5.11 | 2.24 | 3.06 |
+| L1 Reg | ✗ | 147.6 | 4.74 | 2.47 | 3.00 |
+| L2 Reg | ✗ | 171.1 | 4.39 | 2.00 | 2.70 |
+| RadarHD | ✓ | 192.2 | 3.84 | 1.76 | 2.75 |
+| Diffradar | ✓ | 169.5 | 5.23 | 2.44 | 3.10 |
+| Radar-Diffusion | ✓ | 143.6 | 3.94 | **0.44** | 3.51 |
+| **RadarINV (ours)** | ✗ | **123.0** | **3.59** | 1.24 | **2.40** |
 
 **K-Radar** (46 test frames, same prior, no method trained on K-Radar).
 
-| Method | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ | UMHD ↓ |
-|---|:-:|:-:|:-:|:-:|:-:|
-| CFAR | 799.0 | 25.05 | 7.76 | 54.2 | 28.9 |
-| L1 Reg | 173.7 | 3.84 | 3.02 | 34.6 | 34.4 |
-| L2 Reg | 170.1 | 3.29 | **1.63** | **29.5** | **23.4** |
-| **RadarINV (ours)** | **159.9** | **3.09** | 1.80 | 30.2 | 29.2 |
+| Method | FID<sub>BEV</sub> ↓ | CD ↓ | UCD ↓ | MHD ↓ |
+|---|:-:|:-:|:-:|:-:|
+| CFAR | 799.0 | 25.05 | 7.76 | 17.33 |
+| L1 Reg | 173.7 | 3.84 | 3.02 | 3.02 |
+| L2 Reg | 170.1 | 3.29 | **1.63** | 1.95 |
+| **RadarINV (ours)** | **159.9** | **3.09** | 1.80 | **1.90** |
 
 ![results](assets/radial_results.png)
 

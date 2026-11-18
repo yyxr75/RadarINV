@@ -35,6 +35,6 @@ test=pairs("test")
 for reg,(v,lam,tv,nm) in best.items():
     d=run(test,reg,lam,tv,nm)[nm]; od="points_%s"%reg; os.makedirs(od,exist_ok=True)
     for fid,(s,P) in d.items(): np.concatenate([P,np.zeros((len(P),1))],1).astype(np.float32).tofile(od+"/%s.bin"%fid)
-    m={k:float(np.mean([s[k] for s,_ in d.values()])) for k in ["FID","CD","UCD","HD","UMHD","pts"]}; out[reg]=dict(m,lam=lam,tv=tv,extract=nm)
+    m={k:float(np.mean([s[k] for s,_ in d.values()])) for k in ["FID","CD","UCD","MHD","pts"]}; out[reg]=dict(m,lam=lam,tv=tv,extract=nm)
     print("TEST %s: CD %.3f UCD %.3f FID %.1f pts %.0f n=%d"%(reg,m["CD"],m["UCD"],m["FID"],m["pts"],len(d)),flush=True)
 json.dump(out,open("kr_l12_test.json","w"),indent=1); print("KR L12 DONE")

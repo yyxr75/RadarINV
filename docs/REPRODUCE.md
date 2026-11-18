@@ -76,7 +76,7 @@ Table VII), `RADARINV_CHANS=ntx,nrx` (virtual-channel subset), `RADARINV_DEBUG_D
 
 - **CD**: mean predicted→GT plus mean GT→predicted nearest-neighbor distance (Chamfer distance).
 - **UCD**: the unidirectional predicted→GT term.
-- **MHD / UMHD**: the Hausdorff distance and the directed predicted→GT Hausdorff distance (`HD` / `UMHD` in the json).
+- **MHD**: the modified Hausdorff distance (Dubuisson and Jain, ICPR 1994), the larger of the mean predicted→GT and the mean GT→predicted nearest-neighbor distances.
 - **FID<sub>BEV</sub>**: Fréchet distance between the (x, y) coordinates of the two point sets.
 
 ## 5. Reproducing the paper

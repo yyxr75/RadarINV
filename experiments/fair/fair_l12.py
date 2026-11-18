@@ -29,6 +29,6 @@ test=sorted(set(open(D+"ImageSets/test.txt").read().split())); res={}
 for reg,(v,lam,name) in best.items():
     pp=run(test,reg,lam,name)[name]; od=OUT+"/points_%s"%reg; os.makedirs(od,exist_ok=True)
     for f,(s,P) in pp.items(): np.concatenate([P,np.zeros((len(P),1))],1).astype(np.float32).tofile(od+"/%s.bin"%f)
-    m={k:float(np.mean([s[k] for s,_ in pp.values() if s])) for k in ["FID","CD","UCD","HD","UMHD","pts"]}; res[reg]=dict(m,lam=lam,extract=name)
+    m={k:float(np.mean([s[k] for s,_ in pp.values() if s])) for k in ["FID","CD","UCD","MHD","pts"]}; res[reg]=dict(m,lam=lam,extract=name)
     print("TEST %s (lam %g, %s): CD %.3f UCD %.3f FID %.1f pts %.0f"%(reg,lam,name,m["CD"],m["UCD"],m["FID"],m["pts"]),flush=True)
 json.dump(res,open(OUT+"/fair_l12_test.json","w"),indent=1); print("FAIR L12 DONE")
