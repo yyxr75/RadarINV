@@ -62,7 +62,7 @@ train / val / test (68 / 3 / 2 sequences, none shared). `experiments/frames424.t
 
 ## 4. Pretrained weights
 
-All weights are in the Google Drive folder **`RadarINV_weights_2026-10-22`** (link: _to be added_).
+All weights are in the Google Drive folder [**`RadarINV_weights_2026-10-22`**](https://drive.google.com/drive/folders/1VAbZq6jY48dMbMbevolYWyxpfOBq-IDt) (about 35 GB in total).
 
 | File | Size | Place it at | Used for |
 |---|---|---|---|
@@ -74,14 +74,26 @@ All weights are in the Google Drive folder **`RadarINV_weights_2026-10-22`** (li
 
 ```bash
 mkdir -p models/first_stage_models models/ldm
-# download the files above from the Drive folder, then e.g.
-mv vq_radial_epoch323.ckpt  "models/first_stage_models/epoch=000323.ckpt"
-mv ldm_all_epoch098.ckpt    "models/ldm/radial_ldm_epoch=000098.ckpt"
+# only the VQ-VAE and the main prior are needed for inference (section 5)
+pip install gdown
+gdown --folder https://drive.google.com/drive/folders/1VAbZq6jY48dMbMbevolYWyxpfOBq-IDt -O weights   # whole folder; or download single files from the Drive page
+mv weights/vq_radial_epoch323.ckpt "models/first_stage_models/epoch=000323.ckpt"
+mv weights/ldm_all_epoch098.ckpt   "models/ldm/radial_ldm_epoch=000098.ckpt"
+mv weights/ldm_countryside_sd.ckpt weights/ldm_all_cityheldout_sd.ckpt models/ldm/
 ```
 
 The `*_sd.ckpt` files hold only the `state_dict` (no optimizer state); they load the same way.
 
 ## 5. Inference (RADIal)
+
+**Quick start.** After installing (section 2) and placing the two weights above, run the sampler on one of the
+four RADIal frames shipped in `demo_data/` (no dataset download needed):
+
+```bash
+bash sample_radial.sh      # frame 000038; result in results_512x768/
+```
+
+**Full test set.**
 
 Settings of the paper (Table II): DDIM `T = 50` steps, `K = 40` likelihood steps per DDIM step,
 step size `ζ = 0.005`, Tweedie-guided updates, non-negativity, the fast operator.
@@ -172,4 +184,16 @@ all training frames to train an all-scenario prior.
 
 ## Citation
 
-If you use this code, please cite the paper (citation to be added on publication).
+If you use this code, please cite:
+
+```bibtex
+@misc{yang2025unsupervisedradarpointcloud,
+      title={Unsupervised Radar Point Cloud Enhancement via Arbitrary LiDAR Guided Diffusion Prior},
+      author={Yanlong Yang and Jianan Liu and Guanxiong Luo and Hao Li and Euijoon Ahn and Mostafa Rahimi Azghadi and Tao Huang},
+      year={2025},
+      eprint={2505.09887},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2505.09887},
+}
+```
